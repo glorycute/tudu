@@ -21,7 +21,7 @@ export function TaskInput({
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const submit = async () => {
-    const title = value.trim();
+    const title = (inputRef.current?.value ?? value).trim();
     if (!title) return;
     setValue("");
     await onCreate(title);
@@ -61,7 +61,12 @@ export function TaskInput({
         placeholder={placeholder}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Escape") {
+          // Handle Enter directly instead of relying on implicit form submission,
+          // which browsers skip while the submit button is still disabled.
+          if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+            e.preventDefault();
+            void submit();
+          } else if (e.key === "Escape") {
             e.preventDefault();
             setValue("");
             setOpen(false);
