@@ -27,7 +27,7 @@ export type TaskQuery =
       today: ISODate;
     };
 
-export type TaskPatch = Partial<Pick<Task, "title" | "is_completed" | "scheduled_date" | "category_id">>;
+export type TaskPatch = Partial<Pick<Task, "title" | "is_completed" | "scheduled_date" | "category_id" | "sort_order">>;
 
 const SEARCH_LIMIT = 200;
 
@@ -54,7 +54,7 @@ function matches(t: Task, q: TaskQuery): boolean {
 }
 
 function sortTasks(q: TaskQuery) {
-  if (q.kind !== "search") return (a: Task, b: Task) => a.created_at.localeCompare(b.created_at);
+  if (q.kind !== "search") return (a: Task, b: Task) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at);
   // Search: undated first, then newest date first.
   return (a: Task, b: Task) => {
     if (a.scheduled_date === b.scheduled_date) return b.created_at.localeCompare(a.created_at);
@@ -94,14 +94,14 @@ export function useTasks(query: TaskQuery, options: { enabled?: boolean } = {}) 
 
     let req = supabase.from("tasks").select("*").is("deleted_at", null);
     if (q.kind === "range") {
-      req = req.gte("scheduled_date", q.from).lte("scheduled_date", q.to).order("created_at", { ascending: true });
+      req = req.gte("scheduled_date", q.from).lte("scheduled_date", q.to).order("sort_order", { ascending: true });
     } else if (q.kind === "inbox") {
-      req = req.is("scheduled_date", null).order("created_at", { ascending: true });
+      req = req.is("scheduled_date", null).order("sort_order", { ascending: true });
     } else if (q.kind === "open") {
       req = req
         .eq("is_completed", false)
         .or(`scheduled_date.is.null,scheduled_date.gte.${q.today}`)
-        .order("created_at", { ascending: true });
+        .order("sort_order", { ascending: true });
     } else {
       if (q.text.trim()) req = req.ilike("title", `%${escapeLike(q.text.trim())}%`);
       if (q.category === "none") req = req.is("category_id", null);
@@ -166,6 +166,7 @@ export function useTasks(query: TaskQuery, options: { enabled?: boolean } = {}) 
       created_at: now,
       updated_at: now,
       deleted_at: null,
+      sort_order: Date.now(),
     };
     replace(tempId, temp);
     const { data, error } = await supabase
@@ -183,6 +184,10 @@ export function useTasks(query: TaskQuery, options: { enabled?: boolean } = {}) 
 
   const update = async (task: Task, patch: TaskPatch) => {
     if (task.id.startsWith("temp-")) return false;
+    // A task moved to another day goes to the end of that day's list.
+    if (patch.scheduled_date !== undefined && patch.scheduled_date !== task.scheduled_date && patch.sort_order === undefined) {
+      patch = { ...patch, sort_order: Date.now() };
+    }
     const optimistic: Task = {
       ...task,
       ...patch,
@@ -227,7 +232,19 @@ export function useTasks(query: TaskQuery, options: { enabled?: boolean } = {}) 
     });
   };
 
-  return { tasks, loading, create, update, remove, reload: load };
+  /** Move a task to sit between two neighbours (either may be missing at the ends). */
+  const reorder = (task: Task, before: Task | null, after: Task | null) => {
+    let sort_order: number;
+    if (before && after) sort_order = (before.sort_order + after.sort_order) / 2;
+    else if (before) sort_order = before.sort_order + 1000;
+    else if (after) sort_order = after.sort_order - 1000;
+    else return;
+    if (sort_order === task.sort_order) return;
+    return update(task, { sort_order });
+  };
+
+  return { tasks, loading, create, update, remove, reorder, reload: load };
 }
 
-export type TaskActions = Pick<ReturnType<typeof useTasks>, "create" | "update" | "remove">;
+export type TaskActions = Pick<ReturnType<typeof useTasks>, "create" | "update" | "remove"> &
+  Partial<Pick<ReturnType<typeof useTasks>, "reorder">>;

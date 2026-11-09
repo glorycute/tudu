@@ -39,4 +39,6 @@ export type Task = {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  /** Position in the list; lower comes first. */
+  sort_order: number;
 };
