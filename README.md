@@ -20,7 +20,10 @@ Visit `/design` to see every token and component in one place.
 2. Paste the contents of `supabase/migrations/0001_init.sql` and click **Run**.
 
 This creates the `profiles`, `categories` and `tasks` tables, turns on Row Level Security,
-and adds the rule that locks a task once its scheduled day has ended in the user's timezone.
+and adds the task locking rules.
+
+Then run each later file in `supabase/migrations/` once, in number order. For example,
+`0002_lock_after_48_hours.sql` makes tasks lock 48 hours after their day ends.
 
 ## Environment variables
 

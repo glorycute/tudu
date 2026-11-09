@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, Ellipsis, Lock, Trash2 } from "lucide-react";
+import { CalendarDays, Ellipsis, Trash2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { Category } from "@/lib/types";
 import { TaskCheck } from "./TaskCheck";
@@ -19,6 +19,7 @@ export type TaskItemProps = {
   onToggle?: (completed: boolean) => void;
   onRename?: (title: string) => void;
   onReschedule?: () => void;
+  rescheduleLabel?: string;
   onDelete?: () => void;
   /** Extra menu items (e.g. "Change category"). */
   menuItems?: MenuItem[];
@@ -37,6 +38,7 @@ export function TaskItem({
   onToggle,
   onRename,
   onReschedule,
+  rescheduleLabel = "Reschedule",
   onDelete,
   menuItems = [],
 }: TaskItemProps) {
@@ -67,7 +69,7 @@ export function TaskItem({
     ...(onReschedule
       ? [
           {
-            label: "Reschedule",
+            label: rescheduleLabel,
             icon: <CalendarDays className="size-4" />,
             onSelect: onReschedule,
           },
@@ -125,11 +127,12 @@ export function TaskItem({
                 type="button"
                 onClick={startEditing}
                 disabled={locked || !onRename}
-                aria-label={locked ? `${title} (locked)` : `Edit "${title}"`}
+                aria-label={locked ? `${title} (read-only)` : `Edit "${title}"`}
                 className={cn(
                   "-mx-1 block w-full rounded-sm px-1 text-left text-body break-words",
                   "disabled:cursor-default",
-                  completed ? "text-text-disabled line-through" : "text-text",
+                  completed && "line-through",
+                  completed || locked ? "text-text-disabled" : "text-text",
                 )}
               >
                 {title}
@@ -160,10 +163,7 @@ export function TaskItem({
         </div>
 
         <div className="mt-1 flex min-h-5 items-center justify-between gap-3">
-          <span className="flex items-center gap-1.5 text-secondary text-text-secondary">
-            {locked && <Lock className="size-3.5" aria-label="Locked" />}
-            {meta}
-          </span>
+          <span className={cn("text-secondary", locked ? "text-text-disabled" : "text-text-secondary")}>{meta}</span>
           {category && (
             <CategoryBadge name={category.name} color={category.color} />
           )}

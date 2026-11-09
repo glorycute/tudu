@@ -1,10 +1,11 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { todayIn, type ISODate } from "@/lib/dates";
 import type { Category, Profile } from "@/lib/types";
+import type { TaskSuggestion } from "@/components/ui/TaskInput";
 
 type AppContextValue = {
   supabase: SupabaseClient;
@@ -14,6 +15,8 @@ type AppContextValue = {
   setCategories: (c: Category[]) => void;
   /** Today's date in the user's timezone. Updates at midnight. */
   today: ISODate;
+  /** Titles of tasks added before, newest first, one per title. Used by the "/" menu. */
+  loadSuggestions: () => Promise<TaskSuggestion[]>;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -64,8 +67,26 @@ export function AppProvider({
       .then(({ data }) => data && setProfile(data as Profile));
   }, [profile, supabase]);
 
+  const loadSuggestions = useCallback(async (): Promise<TaskSuggestion[]> => {
+    const { data } = await supabase
+      .from("tasks")
+      .select("title, category_id, created_at")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(2000);
+    const seen = new Set<string>();
+    const out: TaskSuggestion[] = [];
+    for (const row of (data ?? []) as Array<{ title: string; category_id: string | null }>) {
+      const key = row.title.trim().toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ title: row.title, category_id: row.category_id });
+    }
+    return out;
+  }, [supabase]);
+
   return (
-    <AppContext.Provider value={{ supabase, profile, setProfile, categories, setCategories, today }}>
+    <AppContext.Provider value={{ supabase, profile, setProfile, categories, setCategories, today, loadSuggestions }}>
       {children}
     </AppContext.Provider>
   );

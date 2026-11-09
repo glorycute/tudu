@@ -10,7 +10,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile header */}
-        <header className="sticky top-0 z-20 flex h-12 items-center justify-between border-b border-border bg-bg px-4 md:hidden">
+        <header className="sticky top-0 z-20 flex h-[calc(3rem+env(safe-area-inset-top))] items-center justify-between border-b border-border bg-bg px-4 pt-[env(safe-area-inset-top)] md:hidden">
           <span className="text-subheading tracking-tight">tudu</span>
           <Link
             href="/settings"

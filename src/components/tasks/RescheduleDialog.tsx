@@ -17,7 +17,7 @@ export function RescheduleDialog({
   current: ISODate | null;
   today: ISODate;
   onClose: () => void;
-  onSave: (date: ISODate) => void;
+  onSave: (date: ISODate | null) => void;
 }) {
   const [value, setValue] = useState(current ?? today);
 
@@ -36,7 +36,7 @@ export function RescheduleDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title="Reschedule task"
+      title={current === null ? "Schedule task" : "Reschedule task"}
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
@@ -52,6 +52,11 @@ export function RescheduleDialog({
             {label}
           </Button>
         ))}
+        {current !== null && (
+          <Button size="sm" onClick={() => onSave(null)}>
+            Move to Inbox
+          </Button>
+        )}
       </div>
       <label className="mt-4 block text-label text-text-secondary" htmlFor="reschedule-date">
         Date
