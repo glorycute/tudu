@@ -9,8 +9,11 @@ export function isSupabaseConfigured() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return false;
+  if (url !== url.trim() || key !== key.trim()) return false;
   try {
-    return new URL(url).protocol === "https:" || url.startsWith("http://127.0.0.1") || url.startsWith("http://localhost");
+    const u = new URL(url);
+    if (u.pathname !== "/" && u.pathname !== "") return false;
+    return u.protocol === "https:" || u.hostname === "127.0.0.1" || u.hostname === "localhost";
   } catch {
     return false;
   }
