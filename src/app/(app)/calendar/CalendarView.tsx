@@ -53,7 +53,7 @@ export function CalendarView() {
     return { from: gridStart, to: addDays(startOfWeek(endOfMonth(monthStart), weekStartsOn), 6) };
   }, [view, date, weekStart, gridStart, monthStart, weekStartsOn]);
 
-  const { tasks, loading, create, update, remove } = useTasks(range);
+  const { tasks, loading, create, update, remove } = useTasks({ kind: "range", ...range });
   const actions = { create, update, remove };
   const tasksOn = (d: ISODate) => tasks.filter((t) => t.scheduled_date === d);
 
@@ -104,7 +104,7 @@ export function CalendarView() {
                 >
                   {dayLabel(d, today)}
                 </h3>
-                <TaskList date={d} tasks={tasksOn(d)} actions={actions} emptyText={d < today ? "No tasks" : undefined} />
+                <TaskList addTo={d} tasks={tasksOn(d)} actions={actions} emptyText={d < today ? "No tasks" : undefined} />
               </section>
             ))
           )}
@@ -125,7 +125,7 @@ export function CalendarView() {
           {loading ? (
             <TaskListSkeleton rows={2} />
           ) : (
-            <TaskList date={date} tasks={tasksOn(date)} actions={actions} emptyText={date < today ? "No tasks" : undefined} />
+            <TaskList addTo={date} tasks={tasksOn(date)} actions={actions} emptyText={date < today ? "No tasks" : undefined} />
           )}
         </>
       )}
@@ -136,7 +136,7 @@ export function CalendarView() {
           {loading ? (
             <TaskListSkeleton />
           ) : (
-            <TaskList date={date} tasks={tasksOn(date)} actions={actions} emptyText={date < today ? "No tasks" : undefined} />
+            <TaskList addTo={date} tasks={tasksOn(date)} actions={actions} emptyText={date < today ? "No tasks" : undefined} />
           )}
         </>
       )}

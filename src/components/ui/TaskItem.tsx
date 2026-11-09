@@ -19,6 +19,7 @@ export type TaskItemProps = {
   onToggle?: (completed: boolean) => void;
   onRename?: (title: string) => void;
   onReschedule?: () => void;
+  rescheduleLabel?: string;
   onDelete?: () => void;
   /** Extra menu items (e.g. "Change category"). */
   menuItems?: MenuItem[];
@@ -37,6 +38,7 @@ export function TaskItem({
   onToggle,
   onRename,
   onReschedule,
+  rescheduleLabel = "Reschedule",
   onDelete,
   menuItems = [],
 }: TaskItemProps) {
@@ -67,7 +69,7 @@ export function TaskItem({
     ...(onReschedule
       ? [
           {
-            label: "Reschedule",
+            label: rescheduleLabel,
             icon: <CalendarDays className="size-4" />,
             onSelect: onReschedule,
           },
