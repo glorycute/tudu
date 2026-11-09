@@ -15,6 +15,7 @@ import {
   dayLabel,
   endOfMonth,
   formatDate,
+  isLockedDate,
   isValidISODate,
   startOfMonth,
   startOfWeek,
@@ -100,11 +101,11 @@ export function CalendarView() {
               <section key={d} id={`day-${d}`} aria-labelledby={`day-${d}-h`} className="mb-8 scroll-mt-16">
                 <h3
                   id={`day-${d}-h`}
-                  className={`border-b border-border pb-2 text-subheading ${d < today ? "text-text-secondary" : ""}`}
+                  className={`border-b border-border pb-2 text-subheading ${isLockedDate(d, today) ? "text-text-disabled" : ""}`}
                 >
                   {dayLabel(d, today)}
                 </h3>
-                <TaskList addTo={d} tasks={tasksOn(d)} actions={actions} emptyText={d < today ? "No tasks" : undefined} />
+                <TaskList addTo={d} tasks={tasksOn(d)} actions={actions} emptyText={isLockedDate(d, today) ? "No tasks" : undefined} />
               </section>
             ))
           )}
@@ -125,7 +126,7 @@ export function CalendarView() {
           {loading ? (
             <TaskListSkeleton rows={2} />
           ) : (
-            <TaskList addTo={date} tasks={tasksOn(date)} actions={actions} emptyText={date < today ? "No tasks" : undefined} />
+            <TaskList addTo={date} tasks={tasksOn(date)} actions={actions} emptyText={isLockedDate(date, today) ? "No tasks" : undefined} />
           )}
         </>
       )}
@@ -136,7 +137,7 @@ export function CalendarView() {
           {loading ? (
             <TaskListSkeleton />
           ) : (
-            <TaskList addTo={date} tasks={tasksOn(date)} actions={actions} emptyText={date < today ? "No tasks" : undefined} />
+            <TaskList addTo={date} tasks={tasksOn(date)} actions={actions} emptyText={isLockedDate(date, today) ? "No tasks" : undefined} />
           )}
         </>
       )}

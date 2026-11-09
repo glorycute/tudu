@@ -73,3 +73,14 @@ export function shortDateLabel(iso: ISODate, today: ISODate): string {
   const sameYear = iso.slice(0, 4) === today.slice(0, 4);
   return formatDate(iso, { weekday: "short", day: "numeric", month: "short", ...(sameYear ? {} : { year: "numeric" }) });
 }
+
+/**
+ * A finished day stays editable for this many days (48 hours), then its tasks lock.
+ * Must match public.lock_grace_days() in the database.
+ */
+export const LOCK_GRACE_DAYS = 2;
+
+/** True when tasks scheduled on this date are read-only. Undated (Inbox) tasks never lock. */
+export function isLockedDate(date: ISODate | null, today: ISODate): boolean {
+  return date !== null && date < addDays(today, -LOCK_GRACE_DAYS);
+}

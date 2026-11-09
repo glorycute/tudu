@@ -99,7 +99,7 @@ export function SettingsView() {
           </select>
         </Row>
         <p className="mt-3 text-secondary text-text-secondary">
-          Tasks lock at midnight in your timezone once their day has ended.
+          Tasks become read-only 48 hours after their day ends, at midnight in your timezone.
         </p>
       </section>
 

@@ -5,7 +5,7 @@ import { Tag } from "lucide-react";
 import { TaskInput } from "@/components/ui/TaskInput";
 import { TaskItem } from "@/components/ui/TaskItem";
 import { useApp } from "@/lib/app-context";
-import { formatDate, shortDateLabel, type ISODate } from "@/lib/dates";
+import { formatDate, isLockedDate, shortDateLabel, type ISODate } from "@/lib/dates";
 import type { Task } from "@/lib/types";
 import type { TaskActions } from "@/lib/use-tasks";
 import { CategoryDialog } from "./CategoryDialog";
@@ -39,8 +39,8 @@ export function TaskList({
   const [rescheduling, setRescheduling] = useState<Task | null>(null);
   const [categorizing, setCategorizing] = useState<Task | null>(null);
 
-  const isLocked = (t: Task) => t.scheduled_date !== null && t.scheduled_date < today;
-  const canAdd = addTo !== undefined && (addTo === null || addTo >= today);
+  const isLocked = (t: Task) => isLockedDate(t.scheduled_date, today);
+  const canAdd = addTo !== undefined && !isLockedDate(addTo, today);
   const ordered = keepOrder
     ? tasks
     : [...tasks.filter((t) => !t.is_completed), ...tasks.filter((t) => t.is_completed)];
