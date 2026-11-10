@@ -54,8 +54,8 @@ export function CalendarView() {
     return { from: gridStart, to: addDays(startOfWeek(endOfMonth(monthStart), weekStartsOn), 6) };
   }, [view, date, weekStart, gridStart, monthStart, weekStartsOn]);
 
-  const { tasks, loading, create, update, remove } = useTasks({ kind: "range", ...range });
-  const actions = { create, update, remove };
+  const { tasks, loading, create, update, remove, reorder } = useTasks({ kind: "range", ...range });
+  const actions = { create, update, remove, reorder };
   const tasksOn = (d: ISODate) => tasks.filter((t) => t.scheduled_date === d);
 
   const step = (dir: 1 | -1) => {

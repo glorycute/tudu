@@ -45,9 +45,19 @@ export function TaskInput({
 
   const slashMode = !!loadSuggestions && value.startsWith("/");
   const filter = slashMode ? value.slice(1).trim().toLowerCase() : "";
-  const matches = slashMode
+  // "/wo" lists matching categories first, then matching saved tasks.
+  const categoryMatches =
+    slashMode && !filter.includes(" ")
+      ? categories.filter((c) => c.name.toLowerCase().startsWith(filter)).slice(0, 4)
+      : [];
+  const taskMatches = slashMode
     ? (suggestions ?? []).filter((s) => s.title.toLowerCase().includes(filter)).slice(0, MAX_SUGGESTIONS)
     : [];
+  type Option = { kind: "category"; category: Category } | { kind: "task"; task: TaskSuggestion };
+  const matches: Option[] = [
+    ...categoryMatches.map((category) => ({ kind: "category" as const, category })),
+    ...taskMatches.map((task) => ({ kind: "task" as const, task })),
+  ];
 
   // Fetch saved tasks each time the slash menu opens, so it includes the latest ones.
   useEffect(() => {
@@ -72,20 +82,49 @@ export function TaskInput({
 
   const findCategory = (id: string | null) => categories.find((c) => c.id === id);
 
+  /** "/work buy paper" → the Work category + "buy paper". Longest category name wins. */
+  const splitCategoryPrefix = (text: string) => {
+    if (!text.startsWith("/")) return null;
+    const body = text.slice(1).toLowerCase();
+    const c = [...categories]
+      .sort((a, b) => b.name.length - a.name.length)
+      .find((cat) => body.startsWith(`${cat.name.toLowerCase()} `));
+    return c ? { category: c, rest: text.slice(1 + c.name.length + 1) } : null;
+  };
+
+  const chooseCategory = (c: Category, rest = "") => {
+    setCategoryId(c.id);
+    setCategoryFromSuggestion(false);
+    setValue(rest);
+    inputRef.current?.focus();
+  };
+
   const submit = async () => {
     let title = (inputRef.current?.value ?? value).trim();
-    if (title.startsWith("/")) title = title.slice(1).trim();
+    let chosenCategory = categoryId;
+    const prefixed = splitCategoryPrefix(`${title} `);
+    if (prefixed) {
+      chosenCategory = prefixed.category.id;
+      title = prefixed.rest.trim();
+    } else if (title.startsWith("/")) {
+      title = title.slice(1).trim();
+    }
     if (!title) return;
     setValue("");
     if (categoryFromSuggestion) {
       setCategoryId(defaultCategoryId);
       setCategoryFromSuggestion(false);
     }
-    await onCreate(title, categoryId);
+    await onCreate(title, chosenCategory);
     inputRef.current?.focus();
   };
 
-  const pick = (s: TaskSuggestion) => {
+  const pick = (o: Option) => {
+    if (o.kind === "category") chooseCategory(o.category);
+    else pickTask(o.task);
+  };
+
+  const pickTask = (s: TaskSuggestion) => {
     setValue(s.title);
     // Only reuse the category if it still exists.
     setCategoryId(s.category_id && findCategory(s.category_id) ? s.category_id : null);
@@ -138,8 +177,13 @@ export function TaskInput({
         aria-activedescendant={slashMode && matches[active] ? `${listId}-${active}` : undefined}
         value={value}
         maxLength={500}
-        placeholder={placeholder ?? (loadSuggestions ? "Task name, or / to reuse a task" : "Task name")}
-        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder ?? (loadSuggestions ? "Task name, or / for a category or saved task" : "Task name")}
+        onChange={(e) => {
+          // Typing "/work " picks the Work category and keeps only the task name.
+          const prefixed = splitCategoryPrefix(e.target.value);
+          if (prefixed) chooseCategory(prefixed.category, prefixed.rest);
+          else setValue(e.target.value);
+        }}
         onKeyDown={(e) => {
           if (e.nativeEvent.isComposing) return;
           if (slashMode && matches.length > 0 && e.key === "ArrowDown") {
@@ -168,33 +212,42 @@ export function TaskInput({
           ref={menuRef}
           className="absolute inset-x-0 top-full z-30 mt-1 max-h-72 scroll-mb-[calc(var(--spacing-bottom-nav)+1rem)] overflow-y-auto rounded-lg bg-bg p-1 shadow-popover md:scroll-mb-4"
         >
-          {suggestions === null ? (
+          {suggestions === null && matches.length === 0 ? (
             <p className="px-2 py-2 text-secondary text-text-secondary">Loading saved tasks…</p>
           ) : matches.length === 0 ? (
             <p className="px-2 py-2 text-secondary text-text-secondary">
               {filter
-                ? `No saved task matches. Press Enter to add “${value.slice(1).trim()}”.`
-                : "No saved tasks yet. Type a name and press Enter."}
+                ? `Nothing matches. Press Enter to add “${value.slice(1).trim()}”.`
+                : "No categories or saved tasks yet. Type a name and press Enter."}
             </p>
           ) : (
-            <ul id={listId} role="listbox" aria-label="Saved tasks">
-              {matches.map((s, i) => {
-                const c = findCategory(s.category_id);
+            <ul id={listId} role="listbox" aria-label="Categories and saved tasks">
+              {matches.map((o, i) => {
+                const optionClass = cn(
+                  "flex min-h-9 cursor-pointer items-center justify-between gap-3 rounded-sm px-2 text-body",
+                  i === active && "bg-hover",
+                );
+                const common = {
+                  id: `${listId}-${i}`,
+                  role: "option" as const,
+                  "aria-selected": i === active,
+                  onMouseDown: (e: React.MouseEvent) => e.preventDefault(),
+                  onClick: () => pick(o),
+                  onMouseEnter: () => setActive(i),
+                  className: optionClass,
+                };
+                if (o.kind === "category") {
+                  return (
+                    <li key={`cat-${o.category.id}`} {...common}>
+                      <CategoryBadge name={o.category.name} color={o.category.color} className="text-body text-text" />
+                      <span className="shrink-0 text-label text-text-secondary">Category</span>
+                    </li>
+                  );
+                }
+                const c = findCategory(o.task.category_id);
                 return (
-                  <li
-                    key={`${s.title}-${i}`}
-                    id={`${listId}-${i}`}
-                    role="option"
-                    aria-selected={i === active}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => pick(s)}
-                    onMouseEnter={() => setActive(i)}
-                    className={cn(
-                      "flex min-h-9 cursor-pointer items-center justify-between gap-3 rounded-sm px-2 text-body",
-                      i === active && "bg-hover",
-                    )}
-                  >
-                    <span className="truncate">{s.title}</span>
+                  <li key={`task-${o.task.title}-${i}`} {...common}>
+                    <span className="truncate">{o.task.title}</span>
                     {c && <CategoryBadge name={c.name} color={c.color} className="shrink-0" />}
                   </li>
                 );

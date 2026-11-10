@@ -11,7 +11,7 @@ import { useTasks } from "@/lib/use-tasks";
 export function TodayView() {
   const { today } = useApp();
   const range = useMemo(() => ({ from: today, to: today }), [today]);
-  const { tasks, loading, create, update, remove } = useTasks({ kind: "range", ...range });
+  const { tasks, loading, create, update, remove, reorder } = useTasks({ kind: "range", ...range });
   const openCount = tasks.filter((t) => !t.is_completed).length;
 
   return (
@@ -32,7 +32,7 @@ export function TodayView() {
       {loading ? (
         <TaskListSkeleton />
       ) : (
-        <TaskList addTo={today} tasks={tasks} actions={{ create, update, remove }} />
+        <TaskList addTo={today} tasks={tasks} actions={{ create, update, remove, reorder }} />
       )}
     </>
   );
