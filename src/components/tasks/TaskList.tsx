@@ -28,6 +28,7 @@ import {
   type ISODate,
 } from "@/lib/dates";
 import type { Task } from "@/lib/types";
+import { parseLeadingTime } from "@/lib/time";
 import type { TaskActions } from "@/lib/use-tasks";
 import { CategoryDialog } from "./CategoryDialog";
 import { RescheduleDialog } from "./RescheduleDialog";
@@ -118,6 +119,8 @@ export function TaskList({
     ? tasks
     : [...openTasks, ...tasks.filter((t) => t.is_completed)];
   const sortable = !keepOrder && !!actions.reorder;
+  // Tasks with a time sit in time order; only the others can be dragged.
+  const movable = openTasks.filter((t) => !t.start_time);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -129,15 +132,15 @@ export function TaskList({
   const justDragged = useRef(false);
 
   const moveTo = (task: Task, newIndex: number) => {
-    const oldIndex = openTasks.findIndex((t) => t.id === task.id);
+    const oldIndex = movable.findIndex((t) => t.id === task.id);
     if (
       oldIndex < 0 ||
       newIndex < 0 ||
-      newIndex >= openTasks.length ||
+      newIndex >= movable.length ||
       newIndex === oldIndex
     )
       return;
-    const moved = arrayMove(openTasks, oldIndex, newIndex);
+    const moved = arrayMove(movable, oldIndex, newIndex);
     void actions.reorder?.(
       task,
       moved[newIndex - 1] ?? null,
@@ -148,11 +151,11 @@ export function TaskList({
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     setTimeout(() => (justDragged.current = false), 0);
     if (!over || active.id === over.id) return;
-    const task = openTasks.find((t) => t.id === active.id);
+    const task = movable.find((t) => t.id === active.id);
     if (task)
       moveTo(
         task,
-        openTasks.findIndex((t) => t.id === over.id),
+        movable.findIndex((t) => t.id === over.id),
       );
   };
   const categoryFor = (t: Task) =>
@@ -191,7 +194,7 @@ export function TaskList({
         onDragCancel={() => setTimeout(() => (justDragged.current = false), 0)}
       >
         <SortableContext
-          items={sortable ? openTasks.map((t) => t.id) : []}
+          items={sortable ? movable.map((t) => t.id) : []}
           strategy={verticalListSortingStrategy}
         >
           <div
@@ -203,7 +206,7 @@ export function TaskList({
             }}
           >
             {ordered.map((t) => {
-              const openIndex = openTasks.indexOf(t);
+              const openIndex = movable.indexOf(t);
               const canMove =
                 sortable &&
                 openIndex >= 0 &&
@@ -220,7 +223,7 @@ export function TaskList({
                           },
                         ]
                       : []),
-                    ...(openIndex < openTasks.length - 1
+                    ...(openIndex < movable.length - 1
                       ? [
                           {
                             label: "Move down",
@@ -235,6 +238,7 @@ export function TaskList({
                 <TaskItem
                   key={t.id}
                   title={t.title}
+                  time={t.start_time}
                   completed={t.is_completed}
                   category={categoryFor(t)}
                   meta={metaFor(t)}
@@ -242,7 +246,16 @@ export function TaskList({
                   onToggle={(is_completed) =>
                     actions.update(t, { is_completed })
                   }
-                  onRename={(title) => actions.update(t, { title })}
+                  onRename={(title) => {
+                    // Typing "9am gym" while renaming sets the time too.
+                    const parsed = parseLeadingTime(title);
+                    void actions.update(
+                      t,
+                      parsed
+                        ? { title: parsed.title, start_time: parsed.time }
+                        : { title },
+                    );
+                  }}
                   onReschedule={() => setRescheduling(t)}
                   rescheduleLabel={
                     t.scheduled_date === null ? "Schedule" : "Reschedule"

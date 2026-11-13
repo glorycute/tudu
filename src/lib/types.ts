@@ -40,6 +40,8 @@ export type Task = {
   user_id: string;
   category_id: string | null;
   title: string;
+  /** Time of day ("HH:MM" or "HH:MM:SS"), or null when the task has no time. */
+  start_time: string | null;
   /** ISO date (YYYY-MM-DD). null means the task is in the Inbox. */
   scheduled_date: string | null;
   is_completed: boolean;
