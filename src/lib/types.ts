@@ -27,6 +27,14 @@ export type Category = {
   created_at: string;
 };
 
+export type Habit = {
+  id: string;
+  user_id: string;
+  title: string;
+  category_id: string | null;
+  created_at: string;
+};
+
 export type Task = {
   id: string;
   user_id: string;

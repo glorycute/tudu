@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { AppProvider } from "@/lib/app-context";
 import { createClient } from "@/lib/supabase/server";
-import type { Category, Profile } from "@/lib/types";
+import type { Category, Habit, Profile } from "@/lib/types";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -11,9 +11,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: profile }, { data: categories }] = await Promise.all([
+  const [{ data: profile }, { data: categories }, { data: habits }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).single(),
     supabase.from("categories").select("*").order("name"),
+    // Empty until the habits migration (0004) has been run.
+    supabase.from("habits").select("*").order("title"),
   ]);
 
   if (!profile) {
@@ -23,7 +25,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <AppProvider initialProfile={profile as Profile} initialCategories={(categories ?? []) as Category[]}>
+    <AppProvider initialProfile={profile as Profile} initialCategories={(categories ?? []) as Category[]}
+      initialHabits={(habits ?? []) as Habit[]}
+    >
       <AppShell>{children}</AppShell>
     </AppProvider>
   );

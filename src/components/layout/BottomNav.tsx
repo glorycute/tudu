@@ -14,7 +14,7 @@ export function BottomNav() {
       aria-label="Main"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <ul className="grid h-bottom-nav grid-cols-5">
+      <ul className="grid h-bottom-nav grid-cols-6">
         {NAV_ITEMS.filter((i) => i.mobile).map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (

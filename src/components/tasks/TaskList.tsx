@@ -107,7 +107,7 @@ export function TaskList({
   keepOrder?: boolean;
   emptyText?: string;
 }) {
-  const { today, categories, loadSuggestions } = useApp();
+  const { today, categories, habits, loadSuggestions } = useApp();
   const [rescheduling, setRescheduling] = useState<Task | null>(null);
   const [categorizing, setCategorizing] = useState<Task | null>(null);
 
@@ -274,6 +274,7 @@ export function TaskList({
         <div className="pt-2">
           <TaskInput
             categories={categories}
+            habits={habits}
             defaultCategoryId={defaultCategoryId}
             loadSuggestions={loadSuggestions}
             onCreate={(title, categoryId) =>

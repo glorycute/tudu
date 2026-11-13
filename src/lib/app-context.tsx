@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { todayIn, type ISODate } from "@/lib/dates";
-import type { Category, Profile } from "@/lib/types";
+import type { Category, Habit, Profile } from "@/lib/types";
 import type { TaskSuggestion } from "@/components/ui/TaskInput";
 
 type AppContextValue = {
@@ -13,6 +13,8 @@ type AppContextValue = {
   setProfile: (p: Profile) => void;
   categories: Category[];
   setCategories: (c: Category[]) => void;
+  habits: Habit[];
+  setHabits: (h: Habit[]) => void;
   /** Today's date in the user's timezone. Updates at midnight. */
   today: ISODate;
   /** Titles of tasks added before, newest first, one per title. Used by the "/" menu. */
@@ -30,15 +32,18 @@ export function useApp() {
 export function AppProvider({
   initialProfile,
   initialCategories,
+  initialHabits,
   children,
 }: {
   initialProfile: Profile;
   initialCategories: Category[];
+  initialHabits: Habit[];
   children: ReactNode;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [profile, setProfile] = useState(initialProfile);
   const [categories, setCategories] = useState(initialCategories);
+  const [habits, setHabits] = useState(initialHabits);
   const [today, setToday] = useState(() => todayIn(initialProfile.timezone));
 
   // Keep "today" correct across midnight and timezone changes.
@@ -86,7 +91,7 @@ export function AppProvider({
   }, [supabase]);
 
   return (
-    <AppContext.Provider value={{ supabase, profile, setProfile, categories, setCategories, today, loadSuggestions }}>
+    <AppContext.Provider value={{ supabase, profile, setProfile, categories, setCategories, habits, setHabits, today, loadSuggestions }}>
       {children}
     </AppContext.Provider>
   );
