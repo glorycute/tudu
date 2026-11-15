@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Repeat } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { CATEGORY_COLORS } from "@/lib/categories";
-import type { Category } from "@/lib/types";
+import type { Category, Habit } from "@/lib/types";
 import { CategoryBadge } from "./CategoryBadge";
 
 export type TaskSuggestion = { title: string; category_id: string | null };
@@ -14,18 +14,20 @@ const MAX_SUGGESTIONS = 8;
 /**
  * Inline "Add task" row.
  * - Type and press Enter to save; the input stays open for the next task.
- * - Type "/" to search tasks you've added before and reuse one.
+ * - Type "/" to pick a habit (adds it right away), a category, or a task you've added before.
  * - Escape closes it.
  */
 export function TaskInput({
   onCreate,
   categories = [],
+  habits = [],
   defaultCategoryId = null,
   loadSuggestions,
   placeholder,
 }: {
   onCreate: (title: string, categoryId: string | null) => void | Promise<void>;
   categories?: Category[];
+  habits?: Habit[];
   defaultCategoryId?: string | null;
   loadSuggestions?: () => Promise<TaskSuggestion[]>;
   placeholder?: string;
@@ -53,8 +55,21 @@ export function TaskInput({
   const taskMatches = slashMode
     ? (suggestions ?? []).filter((s) => s.title.toLowerCase().includes(filter)).slice(0, MAX_SUGGESTIONS)
     : [];
-  type Option = { kind: "category"; category: Category } | { kind: "task"; task: TaskSuggestion };
+  // "/d" lists habits whose name (or any word in it) starts with "d".
+  const habitMatches = slashMode
+    ? habits
+        .filter((h) => {
+          const t = h.title.toLowerCase();
+          return !filter || t.startsWith(filter) || t.split(/\s+/).some((w) => w.startsWith(filter));
+        })
+        .slice(0, 5)
+    : [];
+  type Option =
+    | { kind: "habit"; habit: Habit }
+    | { kind: "category"; category: Category }
+    | { kind: "task"; task: TaskSuggestion };
   const matches: Option[] = [
+    ...habitMatches.map((habit) => ({ kind: "habit" as const, habit })),
     ...categoryMatches.map((category) => ({ kind: "category" as const, category })),
     ...taskMatches.map((task) => ({ kind: "task" as const, task })),
   ];
@@ -119,8 +134,16 @@ export function TaskInput({
     inputRef.current?.focus();
   };
 
+  /** Picking a habit adds the task straight away. */
+  const addHabit = async (h: Habit) => {
+    setValue("");
+    await onCreate(h.title, h.category_id && findCategory(h.category_id) ? h.category_id : null);
+    inputRef.current?.focus();
+  };
+
   const pick = (o: Option) => {
-    if (o.kind === "category") chooseCategory(o.category);
+    if (o.kind === "habit") void addHabit(o.habit);
+    else if (o.kind === "category") chooseCategory(o.category);
     else pickTask(o.task);
   };
 
@@ -177,7 +200,7 @@ export function TaskInput({
         aria-activedescendant={slashMode && matches[active] ? `${listId}-${active}` : undefined}
         value={value}
         maxLength={500}
-        placeholder={placeholder ?? (loadSuggestions ? "Task name, or / for a category or saved task" : "Task name")}
+        placeholder={placeholder ?? (loadSuggestions ? "Task name, or / for a habit, category or saved task" : "Task name")}
         onChange={(e) => {
           // Typing "/work " picks the Work category and keeps only the task name.
           const prefixed = splitCategoryPrefix(e.target.value);
@@ -221,7 +244,7 @@ export function TaskInput({
                 : "No categories or saved tasks yet. Type a name and press Enter."}
             </p>
           ) : (
-            <ul id={listId} role="listbox" aria-label="Categories and saved tasks">
+            <ul id={listId} role="listbox" aria-label="Habits, categories and saved tasks">
               {matches.map((o, i) => {
                 const optionClass = cn(
                   "flex min-h-9 cursor-pointer items-center justify-between gap-3 rounded-sm px-2 text-body",
@@ -236,6 +259,21 @@ export function TaskInput({
                   onMouseEnter: () => setActive(i),
                   className: optionClass,
                 };
+                if (o.kind === "habit") {
+                  const hc = findCategory(o.habit.category_id);
+                  return (
+                    <li key={`habit-${o.habit.id}`} {...common}>
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Repeat className="size-4 shrink-0 text-text-secondary" aria-hidden />
+                        <span className="truncate">{o.habit.title}</span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2">
+                        {hc && <CategoryBadge name={hc.name} color={hc.color} />}
+                        <span className="text-label text-text-secondary">Habit</span>
+                      </span>
+                    </li>
+                  );
+                }
                 if (o.kind === "category") {
                   return (
                     <li key={`cat-${o.category.id}`} {...common}>

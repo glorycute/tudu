@@ -4,12 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { CalendarDays, Ellipsis, Trash2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { Category } from "@/lib/types";
+import { formatTimeOfDay } from "@/lib/time";
 import { TaskCheck } from "./TaskCheck";
 import { CategoryBadge } from "./CategoryBadge";
 import { Menu, type MenuItem } from "./Menu";
 
 export type TaskItemProps = {
   title: string;
+  /** Time of day ("HH:MM"), shown to the left of the title. */
+  time?: string | null;
   completed: boolean;
   category?: Pick<Category, "name" | "color"> | null;
   /** Optional meta shown on the left of the bottom line, e.g. a date. */
@@ -31,6 +34,7 @@ export type TaskItemProps = {
  */
 export function TaskItem({
   title,
+  time,
   completed,
   category,
   meta,
@@ -101,6 +105,16 @@ export function TaskItem({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2">
+          {time && (
+            <span
+              className={cn(
+                "shrink-0 text-body font-medium tabular-nums",
+                completed || locked ? "text-text-disabled" : "text-text-secondary",
+              )}
+            >
+              {formatTimeOfDay(time)}
+            </span>
+          )}
           <div className="min-w-0 flex-1">
             {editing ? (
               <input

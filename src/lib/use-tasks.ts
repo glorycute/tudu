@@ -5,6 +5,7 @@ import { useApp } from "@/lib/app-context";
 import { useToast } from "@/components/ui/Toast";
 import type { ISODate } from "@/lib/dates";
 import type { Task } from "@/lib/types";
+import { parseLeadingTime } from "@/lib/time";
 
 /**
  * Which tasks a screen shows.
@@ -27,7 +28,7 @@ export type TaskQuery =
       today: ISODate;
     };
 
-export type TaskPatch = Partial<Pick<Task, "title" | "is_completed" | "scheduled_date" | "category_id" | "sort_order">>;
+export type TaskPatch = Partial<Pick<Task, "title" | "is_completed" | "scheduled_date" | "category_id" | "sort_order" | "start_time">>;
 
 const SEARCH_LIMIT = 200;
 
@@ -54,7 +55,13 @@ function matches(t: Task, q: TaskQuery): boolean {
 }
 
 function sortTasks(q: TaskQuery) {
-  if (q.kind !== "search") return (a: Task, b: Task) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at);
+  // Timed tasks come first in time order; the rest keep the user's own order.
+  if (q.kind !== "search")
+    return (a: Task, b: Task) => {
+      if (a.start_time && b.start_time && a.start_time !== b.start_time) return a.start_time < b.start_time ? -1 : 1;
+      if (!a.start_time !== !b.start_time) return a.start_time ? -1 : 1;
+      return a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at);
+    };
   // Search: undated first, then newest date first.
   return (a: Task, b: Task) => {
     if (a.scheduled_date === b.scheduled_date) return b.created_at.localeCompare(a.created_at);
@@ -123,7 +130,7 @@ export function useTasks(query: TaskQuery, options: { enabled?: boolean } = {}) 
     // A change happened while loading: the result may be stale, so load again.
     if (mutationsAtStart !== mutationsRef.current) return load();
     if (error) toast({ message: "Couldn't load your tasks. Try refreshing.", tone: "error" });
-    else setTasks(data as Task[]);
+    else setTasks([...(data as Task[])].sort(sortTasks(q)));
     setLoading(false);
   }, [supabase, toast]);
 
@@ -152,7 +159,11 @@ export function useTasks(query: TaskQuery, options: { enabled?: boolean } = {}) 
     });
   };
 
-  const create = async (title: string, date: ISODate | null, categoryId: string | null = null) => {
+  const create = async (rawTitle: string, date: ISODate | null, categoryId: string | null = null) => {
+    // "8am gym" becomes the title "gym" at 08:00.
+    const parsed = parseLeadingTime(rawTitle);
+    const title = parsed?.title ?? rawTitle;
+    const start_time = parsed?.time ?? null;
     const tempId = `temp-${crypto.randomUUID()}`;
     const now = new Date().toISOString();
     const temp: Task = {
@@ -160,6 +171,7 @@ export function useTasks(query: TaskQuery, options: { enabled?: boolean } = {}) 
       user_id: "",
       category_id: categoryId,
       title,
+      start_time,
       scheduled_date: date,
       is_completed: false,
       completed_at: null,
@@ -171,7 +183,7 @@ export function useTasks(query: TaskQuery, options: { enabled?: boolean } = {}) 
     replace(tempId, temp);
     const { data, error } = await supabase
       .from("tasks")
-      .insert({ title, scheduled_date: date, category_id: categoryId })
+      .insert({ title, start_time, scheduled_date: date, category_id: categoryId })
       .select()
       .single();
     if (error) {
