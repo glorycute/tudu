@@ -8,24 +8,13 @@ import { useApp } from "@/lib/app-context";
 import type { Category, Task } from "@/lib/types";
 
 const MAX_CHIPS = 3;
-const MAX_DOTS = 4;
 
-function Dot({ category, className }: { category: Category | undefined; className?: string }) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "inline-block shrink-0 rounded-full",
-        category ? CATEGORY_COLORS[category.color].dot : "border border-text-disabled",
-        className,
-      )}
-    />
-  );
-}
+/** Chip colors: filled with the category color, or neutral when uncategorized. */
+const chipColor = (c: Category | undefined) => (c ? `${CATEGORY_COLORS[c.color].dot} text-white` : "bg-active text-text");
 
 /**
- * Full month grid. Each date shows its real tasks: color dots on phones,
- * labelled chips (time + title, colored by category) from tablet width up.
+ * Full month grid. Each date shows its real tasks as filled chips colored by
+ * category (title on phones, time + title from tablet width up).
  * Selecting a date is handled by the parent, which opens the daily view.
  */
 export function MonthGrid({
@@ -65,7 +54,8 @@ export function MonthGrid({
       <div className="grid grid-cols-7 pb-2" aria-hidden>
         {visible.slice(0, 7).map((d) => (
           <span key={d} className="text-center text-label text-text-secondary">
-            {formatDate(d, { weekday: "short" })}
+            <span className="sm:hidden">{formatDate(d, { weekday: "narrow" })}</span>
+            <span className="hidden sm:inline">{formatDate(d, { weekday: "short" })}</span>
           </span>
         ))}
       </div>
@@ -88,7 +78,7 @@ export function MonthGrid({
                 list.length ? `, ${open} open, ${done} done` : ", no tasks"
               }`}
               className={cn(
-                "flex min-h-16 min-w-0 flex-col items-stretch gap-1 border-r border-b border-border p-1 text-left",
+                "flex min-h-24 min-w-0 flex-col items-stretch gap-1 overflow-hidden border-r border-b border-border p-0.5 text-left",
                 "sm:min-h-28 sm:p-1.5",
                 "hover:bg-hover",
                 !inMonth && "bg-surface",
@@ -106,37 +96,24 @@ export function MonthGrid({
                 {formatDate(d, { day: "numeric" })}
               </span>
 
-              {/* Phones: one dot per task, colored by category. */}
               {list.length > 0 && (
-                <span aria-hidden className="flex flex-wrap justify-center gap-0.5 sm:hidden">
-                  {list.slice(0, MAX_DOTS).map((t) => (
-                    <Dot key={t.id} category={categoryOf(t)} className={cn("size-1.5", t.is_completed && "opacity-40")} />
-                  ))}
-                  {list.length > MAX_DOTS && (
-                    <span className="text-label leading-none text-text-secondary">+</span>
-                  )}
-                </span>
-              )}
-
-              {/* Tablet and up: labelled chips. */}
-              {list.length > 0 && (
-                <span aria-hidden className="hidden min-w-0 flex-col gap-0.5 sm:flex">
+                <span aria-hidden className="flex min-w-0 flex-col gap-0.5">
                   {list.slice(0, MAX_CHIPS).map((t) => (
                     <span
                       key={t.id}
                       className={cn(
-                        "flex min-w-0 items-center gap-1 rounded-sm bg-surface px-1 text-label",
-                        t.is_completed ? "text-text-disabled line-through" : "text-text",
+                        "flex min-w-0 items-center gap-1 rounded-sm px-1 text-label",
+                        chipColor(categoryOf(t)),
+                        t.is_completed && "line-through opacity-50",
                       )}
                     >
-                      <Dot category={categoryOf(t)} className="size-1.5" />
                       {t.start_time && (
-                        <span className="shrink-0 text-text-secondary no-underline">{formatTimeOfDay(t.start_time)}</span>
+                        <span className="hidden shrink-0 sm:inline">{formatTimeOfDay(t.start_time)}</span>
                       )}
                       <span className="truncate">{t.title}</span>
                     </span>
                   ))}
-                  {extra > 0 && <span className="px-1 text-label text-text-secondary">+{extra} more</span>}
+                  {extra > 0 && <span className="px-1 text-label text-text-secondary">+{extra}</span>}
                 </span>
               )}
             </button>

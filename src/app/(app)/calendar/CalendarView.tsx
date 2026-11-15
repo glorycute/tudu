@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CalendarHeader, type CalendarViewName } from "@/components/calendar/CalendarHeader";
 import { MonthGrid } from "@/components/calendar/MonthGrid";
+import { MonthStrip } from "@/components/calendar/MonthStrip";
 import { WeekStrip } from "@/components/calendar/WeekStrip";
 import { TaskList } from "@/components/tasks/TaskList";
 import { TaskListSkeleton } from "@/components/tasks/TaskListSkeleton";
@@ -120,6 +121,7 @@ export function CalendarView() {
 
       {view === "month" && (
         <>
+          <MonthStrip date={date} today={today} onSelect={(d) => go({ date: d })} />
           <MonthGrid
             gridStart={gridStart}
             month={monthStart.slice(0, 7)}
