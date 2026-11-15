@@ -22,9 +22,9 @@
   --color-border-strong: #c9c9c9;
 
   /* Text */
-  --color-text: #191919;
-  --color-text-secondary: #5f5f5f; /* 6.4:1 on white */
-  --color-text-disabled: #8a8a8a;
+  --color-text: #000000;
+  --color-text-secondary: #3d3d3d; /* 10:1 on white */
+  --color-text-disabled: #6b6b6b;
 
   /* Brand: black */
   --color-primary: #191919;
@@ -38,15 +38,15 @@
   --color-error-light: #fdf1f0;
   --color-warning: #946200;
 
-  /* Category colors (muted, all at least 4.5:1 on white) */
-  --color-cat-gray: #6b6b6b;
-  --color-cat-blue: #3b6fb6;
-  --color-cat-green: #3e7d4f;
-  --color-cat-pink: #b4497a;
-  --color-cat-orange: #a85a17;
-  --color-cat-purple: #7351a6;
-  --color-cat-red: #b8443a;
-  --color-cat-yellow: #8a6d00;
+  /* Category colors: soft pastels. Text on them is always --color-text. */
+  --color-cat-gray: #e6e6fa;   /* lavender */
+  --color-cat-blue: #b0e0e6;   /* sky */
+  --color-cat-green: #f5deb3;  /* sand */
+  --color-cat-pink: #ffb6c1;   /* pink */
+  --color-cat-orange: #ffdab9; /* peach */
+  --color-cat-purple: #d8bfd8; /* orchid */
+  --color-cat-red: #ffe4e1;    /* blush */
+  --color-cat-yellow: #f0e68c; /* lemon */
 
   /* Typography */
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;

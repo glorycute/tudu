@@ -109,7 +109,7 @@ export function CategoryFormDialog({
                 color === c ? "border-primary" : "border-transparent hover:border-border-strong",
               )}
             >
-              <span className={cn("inline-flex size-6 items-center justify-center rounded-full text-white", CATEGORY_COLORS[c].dot)}>
+              <span className={cn("inline-flex size-6 items-center justify-center rounded-full text-text", CATEGORY_COLORS[c].dot)}>
                 {color === c && <Check className="size-3.5" strokeWidth={3} aria-hidden />}
               </span>
             </button>
