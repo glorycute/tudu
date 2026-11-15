@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export type CalendarViewName = "day" | "week" | "month";
@@ -19,6 +19,8 @@ export function CalendarHeader({
   onPrev,
   onNext,
   onToday,
+  onPrevYear,
+  onNextYear,
 }: {
   label: string;
   view: CalendarViewName;
@@ -26,6 +28,9 @@ export function CalendarHeader({
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
+  /** Month view only: jump a whole year. */
+  onPrevYear?: () => void;
+  onNextYear?: () => void;
 }) {
   const unit = view === "day" ? "day" : view === "week" ? "week" : "month";
   return (
@@ -49,11 +54,24 @@ export function CalendarHeader({
           ))}
         </div>
         <div className="flex items-center rounded-md border border-border">
+          {onPrevYear && (
+            <button
+              type="button"
+              onClick={onPrevYear}
+              aria-label="Previous year"
+              className="inline-flex size-9 items-center justify-center rounded-l-md border-r border-border text-text-secondary hover:bg-hover hover:text-text"
+            >
+              <ChevronsLeft className="size-4" aria-hidden />
+            </button>
+          )}
           <button
             type="button"
             onClick={onPrev}
             aria-label={`Previous ${unit}`}
-            className="inline-flex size-9 items-center justify-center rounded-l-md text-text-secondary hover:bg-hover hover:text-text"
+            className={cn(
+              "inline-flex size-9 items-center justify-center text-text-secondary hover:bg-hover hover:text-text",
+              !onPrevYear && "rounded-l-md",
+            )}
           >
             <ChevronLeft className="size-4" aria-hidden />
           </button>
@@ -68,10 +86,23 @@ export function CalendarHeader({
             type="button"
             onClick={onNext}
             aria-label={`Next ${unit}`}
-            className="inline-flex size-9 items-center justify-center rounded-r-md text-text-secondary hover:bg-hover hover:text-text"
+            className={cn(
+              "inline-flex size-9 items-center justify-center text-text-secondary hover:bg-hover hover:text-text",
+              !onNextYear && "rounded-r-md",
+            )}
           >
             <ChevronRight className="size-4" aria-hidden />
           </button>
+          {onNextYear && (
+            <button
+              type="button"
+              onClick={onNextYear}
+              aria-label="Next year"
+              className="inline-flex size-9 items-center justify-center rounded-r-md border-l border-border text-text-secondary hover:bg-hover hover:text-text"
+            >
+              <ChevronsRight className="size-4" aria-hidden />
+            </button>
+          )}
         </div>
       </div>
     </div>
