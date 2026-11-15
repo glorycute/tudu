@@ -36,7 +36,7 @@ export function CalendarHeader({
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <h2 className="text-subheading" aria-live="polite">{label}</h2>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <div role="group" aria-label="Calendar view" className="flex rounded-md border border-border p-0.5">
           {VIEWS.map(([v, text]) => (
             <button
