@@ -5,7 +5,6 @@ import { Inbox, Plus, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
   Button,
-  CategoryBadge,
   Dialog,
   EmptyState,
   IconButton,
@@ -81,7 +80,12 @@ export function DesignSystem() {
         <h3 className="mt-6 mb-3 text-subheading">Category colors</h3>
         <div className="flex flex-wrap gap-4">
           {(Object.keys(CATEGORY_COLORS) as CategoryColor[]).map((c) => (
-            <CategoryBadge key={c} name={CATEGORY_COLORS[c].label} color={c} />
+            <span
+              key={c}
+              role="img"
+              aria-label={CATEGORY_COLORS[c].label}
+              className={`size-6 rounded-full ${CATEGORY_COLORS[c].dot}`}
+            />
           ))}
         </div>
       </Section>
